@@ -16,14 +16,6 @@ var RootCmd = &cobra.Command{
 	Use:   "tong",
 	Short: "Tong is very useful",
 	Long:  "Tong is a command line application to simply usual long commands",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if terminal.IsTerminal(syscall.Stdin) {
-			return errors.New("Unable to read stdin")
-		}
-		b, _ := ioutil.ReadAll(os.Stdin)
-		stdin = string(b)
-		return nil
-	},
 }
 
 func Execute() {
@@ -35,4 +27,13 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize()
+}
+
+func validate() error {
+	if terminal.IsTerminal(syscall.Stdin) {
+		return errors.New("Unable to read stdin")
+	}
+	b, _ := ioutil.ReadAll(os.Stdin)
+	stdin = string(b)
+	return nil
 }

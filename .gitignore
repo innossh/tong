@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 
 /vendor/
+client_secret.json
