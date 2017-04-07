@@ -14,6 +14,8 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"os/exec"
+	"runtime"
 )
 
 const (
@@ -65,8 +67,9 @@ func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 // It returns the retrieved Token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
+	openBrowser(authURL)
+	fmt.Print("Consent to grant access to this application then type the "+
+		"authorization code: ")
 
 	var code string
 	if _, err := fmt.Scan(&code); err != nil {
@@ -80,6 +83,19 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	return tok
 }
 
+func openBrowser(url string) {
+	switch runtime.GOOS {
+	case "linux":
+		exec.Command("xdg-open", url).Start()
+	case "windows":
+		exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		exec.Command("open", url).Start()
+	default:
+		fmt.Printf("Go to the following link in your browser\n%v\n", url)
+	}
+}
+
 // tokenCacheFile generates credential file path/filename.
 // It returns the generated credential path/filename.
 func tokenCacheFile() (string, error) {
@@ -87,10 +103,10 @@ func tokenCacheFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tokenCacheDir := filepath.Join(usr.HomeDir, ".credentials")
+	tokenCacheDir := filepath.Join(usr.HomeDir, ".tong/credentials")
 	os.MkdirAll(tokenCacheDir, 0700)
 	return filepath.Join(tokenCacheDir,
-		url.QueryEscape("github.com.innossh.tong-gsheets.json")), err
+		url.QueryEscape("accounts.google.com-oauth2-token.json")), err
 }
 
 // tokenFromFile retrieves a Token from a given file path.
