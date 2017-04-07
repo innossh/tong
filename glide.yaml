@@ -1,0 +1,12 @@
+package: github.com/innossh/tong
+import:
+- package: github.com/spf13/cobra
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal
+- package: google.golang.org/api
+  subpackages:
+  - sheets/v4
+- package: golang.org/x/oauth2
+  subpackages:
+  - google
