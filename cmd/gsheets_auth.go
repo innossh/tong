@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
-	"os/exec"
 	"runtime"
 )
 
@@ -68,7 +68,7 @@ func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	openBrowser(authURL)
-	fmt.Print("Consent to grant access to this application then type the "+
+	fmt.Print("Consent to grant access to this application then type the " +
 		"authorization code: ")
 
 	var code string

@@ -3,15 +3,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
-	"syscall"
-
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
+	"os"
+	"regexp"
+	"syscall"
 )
 
-var stdin string
+var stdin []string
 var RootCmd = &cobra.Command{
 	Use:   "tong",
 	Short: "Tong is very useful",
@@ -34,6 +34,6 @@ func validate() error {
 		return errors.New("Unable to read stdin")
 	}
 	b, _ := ioutil.ReadAll(os.Stdin)
-	stdin = string(b)
+	stdin = regexp.MustCompile("\r\n|\n\r|\n|\r").Split(string(b), -1)
 	return nil
 }

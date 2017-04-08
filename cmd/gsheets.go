@@ -8,6 +8,7 @@ import (
 	"google.golang.org/api/sheets/v4"
 	"io/ioutil"
 	"log"
+	"regexp"
 )
 
 var clientSecretJson string
@@ -43,16 +44,22 @@ var gSheetsCmd = &cobra.Command{
 			log.Fatalf("Unable to retrieve Sheets Client %v", err)
 		}
 
-		cell := &sheets.CellData{
-			UserEnteredValue: &sheets.ExtendedValue{
-				StringValue: stdin,
-			},
+		var rows []*sheets.RowData
+		for _, line := range stdin {
+			var cells []*sheets.CellData
+			for _, c := range regexp.MustCompile(",").Split(line, -1) {
+				cell := &sheets.CellData{
+					UserEnteredValue: &sheets.ExtendedValue{
+						StringValue: c,
+					},
+				}
+				cells = append(cells, cell)
+			}
+			row := &sheets.RowData{
+				Values: cells,
+			}
+			rows = append(rows, row)
 		}
-		cells := []*sheets.CellData{cell}
-		row := &sheets.RowData{
-			Values: cells,
-		}
-		rows := []*sheets.RowData{row}
 		grid := &sheets.GridData{
 			RowData: rows,
 		}
