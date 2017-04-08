@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -75,7 +74,6 @@ var gSheetsCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("Unable to create a new sheet. %v", err)
 		}
-
-		fmt.Printf("%#v\n", resp)
+		openBrowser(resp.SpreadsheetUrl)
 	},
 }
