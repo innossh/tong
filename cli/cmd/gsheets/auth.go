@@ -1,51 +1,50 @@
-package cmd
+package gsheets
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
-	"runtime"
+
+	"github.com/innossh/tong/cli/cmd"
+	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 const (
+	TokenCacheDir     = ".tong/credentials"
+	TokenCacheName    = "accounts.google.com-oauth2-token.json"
 	DriveScope        = "https://www.googleapis.com/auth/drive"
 	SpreadsheetsScope = "https://www.googleapis.com/auth/spreadsheets"
 )
 
-func init() {
-	gSheetsAuthCmd.PersistentFlags().StringVarP(&clientSecretJson, "client-secret-json", "c", "./client_secret.json", "client secret file (default is ./client_secret.json)")
-	RootCmd.AddCommand(gSheetsAuthCmd)
-}
+func NewAuthCmd(clientSecretJson string) *cobra.Command {
+	authCmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Retrieve authorization token for Gogle Sheets API",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
 
-var gSheetsAuthCmd = &cobra.Command{
-	Use:   "gsheets-auth",
-	Short: "auth",
-	Long:  `auth`,
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
+			b, err := ioutil.ReadFile(clientSecretJson)
+			if err != nil {
+				log.Fatalf("Unable to read client secret file: %v", err)
+			}
 
-		b, err := ioutil.ReadFile(clientSecretJson)
-		if err != nil {
-			log.Fatalf("Unable to read client secret file: %v", err)
-		}
-
-		config, err := google.ConfigFromJSON(b, DriveScope, SpreadsheetsScope)
-		if err != nil {
-			log.Fatalf("Unable to parse client secret file to config: %v", err)
-		}
-		getClient(ctx, config)
-	},
+			config, err := google.ConfigFromJSON(b, DriveScope, SpreadsheetsScope)
+			if err != nil {
+				log.Fatalf("Unable to parse client secret file to config: %v", err)
+			}
+			getClient(ctx, config)
+		},
+	}
+	return authCmd
 }
 
 // getClient uses a Context and Config to retrieve a Token
@@ -67,7 +66,7 @@ func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
 // It returns the retrieved Token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	openBrowser(authURL)
+	cmd.OpenBrowser(authURL)
 	fmt.Print("Consent to grant access to this application then type the " +
 		"authorization code: ")
 
@@ -83,19 +82,6 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	return tok
 }
 
-func openBrowser(url string) {
-	switch runtime.GOOS {
-	case "linux":
-		exec.Command("xdg-open", url).Start()
-	case "windows":
-		exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		exec.Command("open", url).Start()
-	default:
-		fmt.Printf("Go to the following link in your browser\n%v\n", url)
-	}
-}
-
 // tokenCacheFile generates credential file path/filename.
 // It returns the generated credential path/filename.
 func tokenCacheFile() (string, error) {
@@ -103,10 +89,9 @@ func tokenCacheFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tokenCacheDir := filepath.Join(usr.HomeDir, ".tong/credentials")
+	tokenCacheDir := filepath.Join(usr.HomeDir, TokenCacheDir)
 	os.MkdirAll(tokenCacheDir, 0700)
-	return filepath.Join(tokenCacheDir,
-		url.QueryEscape("accounts.google.com-oauth2-token.json")), err
+	return filepath.Join(tokenCacheDir, url.QueryEscape(TokenCacheName)), err
 }
 
 // tokenFromFile retrieves a Token from a given file path.
