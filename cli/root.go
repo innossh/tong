@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"github.com/innossh/tong/cli/cmd"
 	"github.com/innossh/tong/cli/cmd/gsheets"
+	"github.com/spf13/cobra"
 )
 
 func SetupRootCmd(rootCmd *cobra.Command) {

@@ -1,10 +1,11 @@
 package gsheets
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,73 +14,77 @@ import (
 
 	"github.com/innossh/tong/cli/cmd"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 const (
-	TokenCacheDir     = ".tong/credentials"
-	TokenCacheName    = "accounts.google.com-oauth2-token.json"
-	DriveScope        = "https://www.googleapis.com/auth/drive"
-	SpreadsheetsScope = "https://www.googleapis.com/auth/spreadsheets"
+	TokenCacheDir  = ".tong/credentials"
+	TokenCacheName = "accounts.google.com-oauth2-token.json"
 )
 
-func NewAuthCmd(clientSecretJson string) *cobra.Command {
+func NewAuthCmd() *cobra.Command {
 	authCmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Retrieve authorization token for Gogle Sheets API",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := context.Background()
-
-			b, err := ioutil.ReadFile(clientSecretJson)
-			if err != nil {
-				log.Fatalf("Unable to read client secret file: %v", err)
-			}
-
-			config, err := google.ConfigFromJSON(b, DriveScope, SpreadsheetsScope)
-			if err != nil {
-				log.Fatalf("Unable to parse client secret file to config: %v", err)
-			}
-			getClient(ctx, config)
+			auth(getConfig())
 		},
 	}
 	return authCmd
 }
 
-// getClient uses a Context and Config to retrieve a Token
-// then generate a Client. It returns the generated Client.
-func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
+func auth(config *oauth2.Config) {
 	cacheFile, err := tokenCacheFile()
 	if err != nil {
 		log.Fatalf("Unable to get path to cached credential file. %v", err)
+		return
 	}
-	tok, err := tokenFromFile(cacheFile)
+	_, err = tokenFromFile(cacheFile)
+	if err == nil {
+		return
+	}
+	tok, err := getTokenFromWeb(config)
 	if err != nil {
-		tok = getTokenFromWeb(config)
-		saveToken(cacheFile, tok)
+		log.Fatalf("Failed to get access token. %v", err)
+		return
 	}
-	return config.Client(ctx, tok)
+	saveToken(cacheFile, tok)
 }
 
 // getTokenFromWeb uses Config to request a Token.
 // It returns the retrieved Token.
-func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	cmd.OpenBrowser(authURL)
-	fmt.Print("Consent to grant access to this application then type the " +
-		"authorization code: ")
-
-	var code string
-	if _, err := fmt.Scan(&code); err != nil {
-		log.Fatalf("Unable to read authorization code %v", err)
-	}
-
-	tok, err := config.Exchange(oauth2.NoContext, code)
+func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
+	l, err := net.Listen("tcp", TmpLocalServer)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web %v", err)
+		log.Fatalf("failed listen %v", err)
+		return nil, err
 	}
-	return tok
+	defer l.Close()
+
+	stateBytes := make([]byte, 16)
+	_, err = rand.Read(stateBytes)
+	if err != nil {
+		log.Fatalf("failed stateBytes %v", err)
+		return nil, err
+	}
+
+	state := fmt.Sprintf("%x", stateBytes)
+	cmd.OpenBrowser(config.AuthCodeURL(state, oauth2.SetAuthURLParam("response_type", "token")))
+	quit := make(chan *oauth2.Token)
+	go http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/" {
+			w.Write([]byte(`<script>location.href = "/close?" + location.hash.substring(1);</script>`))
+		} else {
+			w.Write([]byte(`<script>window.open("about:blank","_self").close()</script>`))
+			w.(http.Flusher).Flush()
+			quit <- &oauth2.Token{
+				AccessToken: req.URL.Query().Get("access_token"),
+				TokenType:   req.URL.Query().Get("token_type"),
+			}
+		}
+	}))
+
+	return <-quit, nil
 }
 
 // tokenCacheFile generates credential file path/filename.

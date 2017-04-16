@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"syscall"
@@ -12,11 +13,11 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/sheets/v4"
 )
 
-func NewSaveCmd(clientSecretJson string) *cobra.Command {
+func NewSaveCmd() *cobra.Command {
 	saveCmd := &cobra.Command{
 		Use:   "save",
 		Short: "Create a spread sheet",
@@ -24,7 +25,7 @@ func NewSaveCmd(clientSecretJson string) *cobra.Command {
 			return validate()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			save(clientSecretJson)
+			save()
 		},
 	}
 	return saveCmd
@@ -32,6 +33,7 @@ func NewSaveCmd(clientSecretJson string) *cobra.Command {
 
 var stdin []string
 
+// validate validates stdin
 func validate() error {
 	if terminal.IsTerminal(syscall.Stdin) {
 		return errors.New("Unable to read stdin")
@@ -41,20 +43,10 @@ func validate() error {
 	return nil
 }
 
-func save(clientSecretJson string) {
+// save creates a new sheet
+func save() {
 	ctx := context.Background()
-
-	b, err := ioutil.ReadFile(clientSecretJson)
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	config, err := google.ConfigFromJSON(b, DriveScope, SpreadsheetsScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	client := getClient(ctx, config)
-
+	client := getClient(ctx, getConfig())
 	sheetService, err := sheets.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets Client %v", err)
@@ -92,4 +84,18 @@ func save(clientSecretJson string) {
 		log.Fatalf("Unable to create a new sheet. %v", err)
 	}
 	cmd.OpenBrowser(resp.SpreadsheetUrl)
+}
+
+// getClient uses a Context and Config to retrieve a Token
+// then generate a Client. It returns the generated Client.
+func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
+	cacheFile, err := tokenCacheFile()
+	if err != nil {
+		log.Fatalf("Unable to get path to cached credential file. %v", err)
+	}
+	tok, err := tokenFromFile(cacheFile)
+	if err != nil {
+		log.Fatalf("Failed to get access token. %v", err)
+	}
+	return config.Client(ctx, tok)
 }
