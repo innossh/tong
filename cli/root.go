@@ -7,8 +7,8 @@ import (
 )
 
 func SetupRootCmd(rootCmd *cobra.Command) {
-	//rootCmd.PersistentFlags().BoolP("help", "h", false, "Print usage")
-	//rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "Please use --help")
+	rootCmd.PersistentFlags().BoolP("help", "h", false, "Print usage")
+	rootCmd.PersistentFlags().MarkShorthandDeprecated("help", "Please use --help")
 }
 
 func AddCmds(rootCmd *cobra.Command) {

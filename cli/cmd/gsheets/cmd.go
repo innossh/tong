@@ -9,8 +9,7 @@ const (
 	DriveScope        = "https://www.googleapis.com/auth/drive"
 	SpreadsheetsScope = "https://www.googleapis.com/auth/spreadsheets"
 	TmpLocalServer    = "localhost:10080"
-	// TODO: Fix dummy client id
-	ClientId          = "xxxxxxxx.apps.googleusercontent.com"
+	ClientId          = "1008608304541-sn085h0v9lg987c114skdf6s8km9rq4i.apps.googleusercontent.com"
 )
 
 func NewGsheetsCmd() *cobra.Command {

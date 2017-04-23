@@ -18,6 +18,7 @@ import (
 )
 
 func NewSaveCmd() *cobra.Command {
+	var delimiter string
 	saveCmd := &cobra.Command{
 		Use:   "save",
 		Short: "Create a spread sheet",
@@ -25,9 +26,10 @@ func NewSaveCmd() *cobra.Command {
 			return validate()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			save()
+			save(delimiter)
 		},
 	}
+	saveCmd.Flags().StringVarP(&delimiter, "delimiter", "d", ",", "delemiter to parse the input")
 	return saveCmd
 }
 
@@ -44,7 +46,7 @@ func validate() error {
 }
 
 // save creates a new sheet
-func save() {
+func save(delimiter string) {
 	ctx := context.Background()
 	client := getClient(ctx, getConfig())
 	sheetService, err := sheets.New(client)
@@ -55,7 +57,7 @@ func save() {
 	var rows []*sheets.RowData
 	for _, line := range stdin {
 		var cells []*sheets.CellData
-		for _, c := range regexp.MustCompile(",").Split(line, -1) {
+		for _, c := range regexp.MustCompile(delimiter).Split(line, -1) {
 			cell := &sheets.CellData{
 				UserEnteredValue: &sheets.ExtendedValue{
 					StringValue: c,
