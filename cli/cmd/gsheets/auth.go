@@ -39,6 +39,7 @@ func auth(config *oauth2.Config) {
 		log.Fatalf("Unable to get path to cached credential file. %v", err)
 		return
 	}
+	// TODO: Validate expiry
 	_, err = tokenFromFile(cacheFile)
 	if err == nil {
 		return

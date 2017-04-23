@@ -20,7 +20,7 @@ func NewTongCmd() *cobra.Command {
 	tongCmd := &cobra.Command{
 		Use:   "tong",
 		Short: "Tong is very useful",
-		Long:  "Tong is a command line application to simplify usual long commands",
+		Long:  "Tong is a command line application to convert csv into spread sheet or something like that",
 	}
 	cmd.SetupRootCmd(tongCmd)
 	cmd.AddCmds(tongCmd)

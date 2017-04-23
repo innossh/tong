@@ -12,6 +12,7 @@ func NewVersionCmd() *cobra.Command {
 		Short: "Print the version number of Tong",
 		Long:  `All software has versions. This is Tong's`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// TODO: Update version automatically
 			fmt.Println("Tong v0.2.0")
 		},
 	}

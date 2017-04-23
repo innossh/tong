@@ -29,6 +29,7 @@ func NewSaveCmd() *cobra.Command {
 			save(delimiter)
 		},
 	}
+	// TODO: Add mysql flag to parse mysql result
 	saveCmd.Flags().StringVarP(&delimiter, "delimiter", "d", ",", "delemiter to parse the input")
 	return saveCmd
 }
@@ -54,6 +55,7 @@ func save(delimiter string) {
 		log.Fatalf("Unable to retrieve Sheets Client %v", err)
 	}
 
+	// TODO: Refactoring
 	var rows []*sheets.RowData
 	for _, line := range stdin {
 		var cells []*sheets.CellData

@@ -6,6 +6,8 @@ import (
 )
 
 const (
+	AuthURL           = "https://accounts.google.com/o/oauth2/auth"
+	TokenURL          = "https://accounts.google.com/o/oauth2/token"
 	DriveScope        = "https://www.googleapis.com/auth/drive"
 	SpreadsheetsScope = "https://www.googleapis.com/auth/spreadsheets"
 	TmpLocalServer    = "localhost:10080"
@@ -32,8 +34,8 @@ func getConfig() *oauth2.Config {
 			SpreadsheetsScope,
 		},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
-			TokenURL: "https://accounts.google.com/o/oauth2/token",
+			AuthURL:  AuthURL,
+			TokenURL: TokenURL,
 		},
 		ClientID:    ClientId,
 		RedirectURL: "http://" + TmpLocalServer,
