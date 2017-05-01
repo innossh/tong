@@ -2,8 +2,8 @@ package gsheets
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -25,8 +25,8 @@ func NewSaveCmd() *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return validate()
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			save(delimiter)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return save(delimiter)
 		},
 	}
 	// TODO: Add mysql flag to parse mysql result
@@ -47,12 +47,15 @@ func validate() error {
 }
 
 // save creates a new sheet
-func save(delimiter string) {
+func save(delimiter string) error {
 	ctx := context.Background()
-	client := getClient(ctx, getConfig())
+	client, err := getClient(ctx, getAuthConfig())
+	if err != nil {
+		return fmt.Errorf("Unable to get client with access token.\n%v\n", err)
+	}
 	sheetService, err := sheets.New(client)
 	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets Client %v", err)
+		return fmt.Errorf("Unable to retrieve Sheets Client.\n%v\n", err)
 	}
 
 	// TODO: Refactoring
@@ -85,21 +88,18 @@ func save(delimiter string) {
 
 	resp, err := sheetService.Spreadsheets.Create(rb).Context(ctx).Do()
 	if err != nil {
-		log.Fatalf("Unable to create a new sheet. %v", err)
+		return fmt.Errorf("Unable to create a new sheet.\n%v\n", err)
 	}
 	cmd.OpenBrowser(resp.SpreadsheetUrl)
+	return nil
 }
 
 // getClient uses a Context and Config to retrieve a Token
 // then generate a Client. It returns the generated Client.
-func getClient(ctx context.Context, config *oauth2.Config) *http.Client {
-	cacheFile, err := tokenCacheFile()
+func getClient(ctx context.Context, config *oauth2.Config) (*http.Client, error) {
+	tok, err := getTokenFromFile()
 	if err != nil {
-		log.Fatalf("Unable to get path to cached credential file. %v", err)
+		return nil, err
 	}
-	tok, err := tokenFromFile(cacheFile)
-	if err != nil {
-		log.Fatalf("Failed to get access token. %v", err)
-	}
-	return config.Client(ctx, tok)
+	return config.Client(ctx, tok), err
 }

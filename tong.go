@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/innossh/tong/cli"
@@ -11,7 +10,6 @@ import (
 func main() {
 	tongCmd := NewTongCmd()
 	if err := tongCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
