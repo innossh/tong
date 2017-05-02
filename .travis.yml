@@ -1,9 +1,5 @@
+dist: trusty
 language: go
 
 go:
   - 1.8.1
-
-addons:
-  apt:
-    packages:
-      - xdg-utils
