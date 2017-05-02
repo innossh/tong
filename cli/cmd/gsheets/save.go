@@ -90,8 +90,7 @@ func save(delimiter string) error {
 	if err != nil {
 		return fmt.Errorf("Unable to create a new sheet.\n%v\n", err)
 	}
-	cmd.OpenBrowser(resp.SpreadsheetUrl)
-	return nil
+	return cmd.OpenBrowser(resp.SpreadsheetUrl)
 }
 
 // getClient uses a Context and Config to retrieve a Token

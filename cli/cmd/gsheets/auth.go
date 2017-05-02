@@ -21,21 +21,25 @@ const (
 )
 
 func NewAuthCmd() *cobra.Command {
+	var force bool
 	authCmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Retrieve authorization token for Gogle Sheets API",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return auth(getAuthConfig())
+			return auth(getAuthConfig(), force)
 		},
 	}
+	authCmd.Flags().BoolVarP(&force, "--force", "f", false, "recreate access token even if the credential file exists")
 	return authCmd
 }
 
-func auth(config *oauth2.Config) error {
-	_, err := getTokenFromFile()
-	if err == nil {
-		fmt.Println("This client has already been authorized.")
-		return nil
+func auth(config *oauth2.Config, force bool) error {
+	if !force {
+		_, err := getTokenFromFile()
+		if err == nil {
+			fmt.Println("This client has already been authorized.")
+			return nil
+		}
 	}
 
 	t, err := getTokenFromWeb(config)
@@ -61,7 +65,11 @@ func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 	}
 
 	state := fmt.Sprintf("%x", stateBytes)
-	cmd.OpenBrowser(config.AuthCodeURL(state, oauth2.SetAuthURLParam("response_type", "token")))
+	err = cmd.OpenBrowser(config.AuthCodeURL(state, oauth2.SetAuthURLParam("response_type", "token")))
+	if err != nil {
+		return nil, fmt.Errorf("Unable to open web browser\n%v\n", err)
+	}
+
 	quit := make(chan *oauth2.Token)
 	go http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/" {
@@ -99,6 +107,5 @@ func saveToken(token *oauth2.Token) error {
 		return err
 	}
 	defer f.Close()
-	json.NewEncoder(f).Encode(token)
-	return nil
+	return json.NewEncoder(f).Encode(token)
 }
