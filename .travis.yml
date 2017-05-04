@@ -3,5 +3,5 @@ language: go
 go:
   - 1.8.1
 
-install:
+before_install:
   - sudo apt-get install links2
