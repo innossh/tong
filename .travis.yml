@@ -3,7 +3,10 @@ language: go
 go:
   - 1.8.1
 
+before_install:
+  - sudo apt-get install links2
+
 script:
   - which xdg-open
-  - which open
+  - dpkg -S /usr/bin/xdg-open
   - xdg-open https://www.yahoo.com
