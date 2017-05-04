@@ -3,10 +3,8 @@ language: go
 go:
   - 1.8.1
 
-before_install:
-  - sudo apt-get install links2
+install:
+  - sudo apt-get install w3m
 
-script:
-  - which xdg-open
-  - dpkg -S /usr/bin/xdg-open
+before_script:
   - xdg-open https://www.yahoo.com
