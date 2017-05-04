@@ -4,7 +4,4 @@ go:
   - 1.8.1
 
 install:
-  - sudo apt-get install lynx
-
-before_script:
-  - xdg-open https://www.yahoo.com
+  - sudo apt-get install links2
